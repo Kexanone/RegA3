@@ -65,6 +65,7 @@ More advanced examples can be found in the [example folder](example).
 
 `sklearn.preprocessing`:
 - [x] `PolynomialFeatures`
+- [x] `StandardScaler`
 
 `sklearn.pipeline`:
 - [x] `Pipeline`
