@@ -25,7 +25,7 @@ def export_estimator(estimator, function_name, decimal_places=6, indent=4*' ',
     :param line_length: Maximum line length for the code. Defaults to 80.
     :type line_length: int, optional
 
-    :retun: SQF code as
+    :retun: SQF code
     :rtype: str
     '''
     if isinstance(estimator, BaseSearchCV):
