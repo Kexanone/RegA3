@@ -1,0 +1,7 @@
+__title__ = 'RegA3'
+__description__ = 'Export trained regression models from Scikit-learn to SQF.'
+__url__ = 'https://github.com/Kexanone/RegA3'
+__version__ = '0.0.1'
+__author__ = 'Kex'
+__license__ = 'GLP3'
+__copyright__ = 'Copyright (c) 2021 Kex'
