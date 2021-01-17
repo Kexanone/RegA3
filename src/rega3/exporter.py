@@ -1,5 +1,6 @@
 from textwrap import wrap
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model._base import LinearModel
 from sklearn.model_selection._search import BaseSearchCV
 from sklearn.pipeline import Pipeline
@@ -28,28 +29,28 @@ def export_estimator(estimator, function_name, decimal_places=6, indent=4*' ',
     :retun: SQF code
     :rtype: str
     '''
+    _export_function = None
     if isinstance(estimator, BaseSearchCV):
-        return _export_search(estimator, function_name,
-                              decimal_places=decimal_places, indent=indent,
-                              line_length=line_length)
+        _export_function = _export_search
     elif isinstance(estimator, LinearModel):
-        return _export_linear_model(estimator, function_name,
-                                    decimal_places=decimal_places,
-                                    indent=indent,
-                                    line_length=line_length)
+        _export_function = _export_linear_model
     elif isinstance(estimator, Pipeline):
-        return _export_pipeline(estimator, function_name,
-                                decimal_places=decimal_places, indent=indent,
-                                line_length=line_length)
+        _export_function = _export_pipeline
     elif isinstance(estimator, PolynomialFeatures):
-        return _export_polynomial_feature(estimator, function_name,
-                                          decimal_places=decimal_places,
-                                          indent=indent,
-                                          line_length=line_length)
-    else:
+        _export_function = _export_polynomial_feature
+    elif isinstance(estimator, StandardScaler):
+        _export_function = _export_standard_scaler
+
+    if _export_function is None:
         raise NotImplementedError('Cannot export estimator of type '
                                   f'{type(estimator)}')
 
+    return _export_function(estimator, function_name,
+                            decimal_places=decimal_places, indent=indent,
+                            line_length=line_length)
+
+def _wrap(text, indent, line_length):
+    return f'\n{indent}'.join(wrap(text, line_length-len(indent)))
 
 def _export_search(estimator, function_name, **kwargs):
     return export_estimator(estimator.best_estimator_ , function_name,
@@ -67,7 +68,7 @@ def _export_linear_model(estimator, function_name, decimal_places=6,
     summands.append(f'{estimator.intercept_:.{decimal_places}e}')
     body = ' + '.join(summands)
     body = body.replace('+ -', '- ')
-    body = f'\n{indent}'.join(wrap(body, line_length-len(indent)))
+    body = _wrap(body, indent, line_length)
     output += f'{body}\n'
     output += '};\n'
     return output
@@ -105,7 +106,23 @@ def _export_polynomial_feature(estimator, function_name, decimal_places=6,
             elements.append('1')
     body = ', '.join(elements)
     body += ']'
-    body = f'\n{indent}'.join(wrap(body, line_length-len(indent)))
+    body = _wrap(body, indent, line_length)
+    output += f'{body}\n'
+    output += '};\n'
+    return output
+
+
+def _export_standard_scaler(estimator, function_name, decimal_places=6,
+                               indent=4*' ', line_length=80):
+    output = f'{function_name} = {{[\n'
+    output += indent
+    elements = []
+    for i, (mean, scale) in enumerate(zip(estimator.mean_, estimator.scale_)):
+        elements.append(f'((_this#{i})-{mean:.{decimal_places}e}) / '
+                        f'{scale:.{decimal_places}e}')
+    body = ', '.join(elements)
+    body += ']'
+    body = _wrap(body, indent, line_length)
     output += f'{body}\n'
     output += '};\n'
     return output
