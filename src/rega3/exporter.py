@@ -1,11 +1,13 @@
 from textwrap import wrap
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model._base import LinearModel
+from sklearn.model_selection._search import BaseSearchCV
 from sklearn.pipeline import Pipeline
 
 __all__ = [
     'export_estimator'
 ]
+
 
 def export_estimator(estimator, function_name, decimal_places=6, indent=4*' ',
                      line_length=80):
@@ -26,7 +28,16 @@ def export_estimator(estimator, function_name, decimal_places=6, indent=4*' ',
     :retun: SQF code as
     :rtype: str
     '''
-    if isinstance(estimator, Pipeline):
+    if isinstance(estimator, BaseSearchCV):
+        return _export_search(estimator, function_name,
+                              decimal_places=decimal_places, indent=indent,
+                              line_length=line_length)
+    elif isinstance(estimator, LinearModel):
+        return _export_linear_model(estimator, function_name,
+                                    decimal_places=decimal_places,
+                                    indent=indent,
+                                    line_length=line_length)
+    elif isinstance(estimator, Pipeline):
         return _export_pipeline(estimator, function_name,
                                 decimal_places=decimal_places, indent=indent,
                                 line_length=line_length)
@@ -35,14 +46,32 @@ def export_estimator(estimator, function_name, decimal_places=6, indent=4*' ',
                                           decimal_places=decimal_places,
                                           indent=indent,
                                           line_length=line_length)
-    elif isinstance(estimator, LinearModel):
-        return _export_linear_model(estimator, function_name,
-                                    decimal_places=decimal_places,
-                                    indent=indent,
-                                    line_length=line_length)
     else:
         raise NotImplementedError('Cannot export estimator of type '
                                   f'{type(estimator)}')
+
+
+def _export_search(estimator, function_name, **kwargs):
+    return export_estimator(estimator.best_estimator_ , function_name,
+                            **kwargs)
+
+
+def _export_linear_model(estimator, function_name, decimal_places=6,
+                         indent=4*' ', line_length=80):
+    output = f'{function_name} = {{\n'
+    output += indent
+    summands = []
+    for i, coef in enumerate(estimator.coef_):
+        if coef != 0:
+            summands.append(f'{coef:.{decimal_places}e}*(_this#{i})')
+    summands.append(f'{estimator.intercept_:.{decimal_places}e}')
+    body = ' + '.join(summands)
+    body = body.replace('+ -', '- ')
+    body = f'\n{indent}'.join(wrap(body, line_length-len(indent)))
+    output += f'{body}\n'
+    output += '};\n'
+    return output
+
 
 def _export_pipeline(estimator, function_name, indent=4*' ', **kwargs):
     output = f'{function_name} = {{\n'
@@ -56,6 +85,7 @@ def _export_pipeline(estimator, function_name, indent=4*' ', **kwargs):
     output += f'{indent}_this\n'
     output += '};\n'
     return (step_output + output)
+
 
 def _export_polynomial_feature(estimator, function_name, decimal_places=6,
                                indent=4*' ', line_length=80):
@@ -75,22 +105,6 @@ def _export_polynomial_feature(estimator, function_name, decimal_places=6,
             elements.append('1')
     body = ', '.join(elements)
     body += ']'
-    body = f'\n{indent}'.join(wrap(body, line_length-len(indent)))
-    output += f'{body}\n'
-    output += '};\n'
-    return output
-
-def _export_linear_model(estimator, function_name, decimal_places=6,
-                         indent=4*' ', line_length=80):
-    output = f'{function_name} = {{\n'
-    output += indent
-    summands = []
-    for i, coef in enumerate(estimator.coef_):
-        if coef != 0:
-            summands.append(f'{coef:.{decimal_places}e}*(_this#{i})')
-    summands.append(f'{estimator.intercept_:.{decimal_places}e}')
-    body = ' + '.join(summands)
-    body = body.replace('+ -', '- ')
     body = f'\n{indent}'.join(wrap(body, line_length-len(indent)))
     output += f'{body}\n'
     output += '};\n'
