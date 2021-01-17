@@ -41,7 +41,8 @@ def export_estimator(estimator, function_name, decimal_places=6, indent=4*' ',
                                     indent=indent,
                                     line_length=line_length)
     else:
-        return ''
+        raise NotImplementedError('Cannot export estimator of type '
+                                  f'{type(estimator)}')
 
 def _export_pipeline(estimator, function_name, indent=4*' ', **kwargs):
     output = f'{function_name} = {{\n'
