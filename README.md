@@ -39,8 +39,8 @@ rega_fnc_test_polyfeat = {[
 };
 
 rega_fnc_test_linreg = {
-    -5.226124e-14*(_this#1) + 1.296163e-14*(_this#2) + 1.000000e+00*(_this#3) +
-    5.820766e-11
+    ([_this] matrixMultiply [[0.000000e+00], [-5.226124e-14], [1.296163e-14],
+    [1.000000e+00]])#0#0 + 5.820766e-11
 };
 
 rega_fnc_test = {

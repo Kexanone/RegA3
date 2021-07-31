@@ -1,4 +1,5 @@
 from textwrap import wrap
+import sympy as sp
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model._base import LinearModel
@@ -61,12 +62,10 @@ def _export_linear_model(estimator, function_name, decimal_places=6,
                          indent=4*' ', line_length=80):
     output = f'{function_name} = {{\n'
     output += indent
-    summands = []
-    for i, coef in enumerate(estimator.coef_):
-        if coef != 0:
-            summands.append(f'{coef:.{decimal_places}e}*(_this#{i})')
-    summands.append(f'{estimator.intercept_:.{decimal_places}e}')
-    body = ' + '.join(summands)
+    bias = f'{estimator.intercept_:.{decimal_places}e}'
+    coefs = (f'[{coef:.{decimal_places}e}]' for coef in estimator.coef_)
+    coef_vec = f'[{", ".join(coefs)}]'
+    body = f'([_this] matrixMultiply {coef_vec})#0#0 + {bias}'
     body = body.replace('+ -', '- ')
     body = _wrap(body, indent, line_length)
     output += f'{body}\n'
